@@ -61,7 +61,7 @@ export function ProfileForm({ initialProfile, positions, rachaId, userName }: Pr
           </span>
         </label>
         <input accept="image/jpeg,image/png,image/webp" className="sr-only" id="photo" name="photo" onChange={(event) => previewPhoto(event.target.files?.[0])} type="file" />
-        <p className="text-xs text-neutral-500">JPEG, PNG ou WebP, até 512 KB</p>
+        <p className="text-xs text-neutral-500">JPEG, PNG ou WebP, até 2 MB</p>
         {state?.errors?.photo?.[0] ? <p className="form-error">{state.errors.photo[0]}</p> : null}
       </div>
 

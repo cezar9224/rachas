@@ -3,6 +3,8 @@ export type SupportedImage = {
   bytes: Uint8Array;
 };
 
+export const MAX_PROFILE_IMAGE_BYTES = 2 * 1024 * 1024;
+
 export async function validateImage(file: File, maxBytes: number, sizeError: string): Promise<SupportedImage | null> {
   if (file.size === 0) return null;
   if (file.size > maxBytes) throw new Error(sizeError);
@@ -14,7 +16,7 @@ export async function validateImage(file: File, maxBytes: number, sizeError: str
 }
 
 export function validateProfileImage(file: File) {
-  return validateImage(file, 512 * 1024, "A foto deve ter no máximo 512 KB.");
+  return validateImage(file, MAX_PROFILE_IMAGE_BYTES, "A foto deve ter no máximo 2 MB.");
 }
 
 function detectImage(bytes: Uint8Array): SupportedImage["mimeType"] | null {

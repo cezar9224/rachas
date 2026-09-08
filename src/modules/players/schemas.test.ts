@@ -38,4 +38,10 @@ describe("validateProfileImage", () => {
 
     await expect(validateProfileImage(file)).rejects.toThrow("JPEG, PNG ou WebP");
   });
+
+  it("rejects profile images larger than 2 MB", async () => {
+    const file = new File([new Uint8Array(2 * 1024 * 1024 + 1)], "photo.png", { type: "image/png" });
+
+    await expect(validateProfileImage(file)).rejects.toThrow("no máximo 2 MB");
+  });
 });

@@ -5,13 +5,12 @@ import path from "node:path";
 
 import { v2 as cloudinary, type UploadApiResponse } from "cloudinary";
 
-import { type SupportedImage, validateImage } from "@/modules/players/image-validation";
+import { MAX_PROFILE_IMAGE_BYTES, type SupportedImage, validateImage } from "@/modules/players/image-validation";
 
-const MAX_PROFILE_IMAGE_BYTES = 512 * 1024;
 const MAX_CHAMPION_IMAGE_BYTES = 2 * 1024 * 1024;
 
 export async function uploadProfileImage(file: File, memberId: string): Promise<string | null> {
-  return uploadImage(file, MAX_PROFILE_IMAGE_BYTES, "A foto deve ter no máximo 512 KB.", `rachas/profiles/${memberId}`);
+  return uploadImage(file, MAX_PROFILE_IMAGE_BYTES, "A foto deve ter no máximo 2 MB.", `rachas/profiles/${memberId}`);
 }
 
 export async function uploadChampionImage(file: File, matchId: string): Promise<string | null> {

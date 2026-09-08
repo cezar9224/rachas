@@ -150,7 +150,7 @@ Código do racha: ARB7K2
 ### Jogadores
 
 - Cada membership possui um perfil independente, sem duplicar a conta global.
-- Fotos JPEG, PNG e WebP são validadas pelos bytes e limitadas a 512 KB.
+- Fotos JPEG, PNG e WebP são validadas pelos bytes e limitadas a 2 MB.
 - Posição principal e secundárias são aceitas somente quando pertencem ao racha acessado.
 - Membros sem perfil são encaminhados para `/racha/[rachaId]/perfil`.
 - A lista de jogadores está disponível em `/racha/[rachaId]/jogadores`.
