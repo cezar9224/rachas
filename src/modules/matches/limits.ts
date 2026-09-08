@@ -1,0 +1,1 @@
+export const MAX_ACTIVE_MATCHES_PER_RACHA = 2;

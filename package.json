@@ -6,12 +6,32 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint .",
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "vitest run",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
+    "db:clean-test-data": "tsx prisma/clean-test-data.ts",
+    "db:add-fut11-players": "tsx prisma/add-fut11-players.ts",
+    "db:add-fut11-match": "tsx prisma/add-fut11-match.ts",
+    "db:test-fut11-lista": "tsx prisma/create-named-fut11.ts",
+    "db:test-futsal": "tsx prisma/replace-fut11-with-futsal.ts",
+    "db:studio": "prisma studio"
   },
   "dependencies": {
+    "@prisma/client": "6.12.0",
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.11.0",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.39.0",
     "next": "16.3.4",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "server-only": "^0.0.1",
+    "tailwind-merge": "^3.6.0",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -20,7 +40,13 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
+    "prisma": "6.12.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "tsx": "^4.23.13",
+    "typescript": "^5",
+    "vitest": "^4.1.11"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }

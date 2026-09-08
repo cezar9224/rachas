@@ -1,0 +1,298 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RachaRole {
+  OWNER
+  ADMIN
+  PLAYER
+}
+
+enum RachaFormat {
+  FUTSAL
+  FUT7
+  FUT11
+  CUSTOM
+}
+
+enum ParticipantStatus {
+  CONFIRMED
+  WAITING_LIST
+}
+
+enum MatchStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PositionCategory {
+  GOALKEEPER
+  DEFENDER
+  MIDFIELDER
+  ATTACKER
+}
+
+model User {
+  id                  String               @id @default(cuid())
+  name                String
+  email               String               @unique
+  phone               String?              @unique
+  passwordHash        String
+  memberships         RachaMember[]
+  passwordResetTokens PasswordResetToken[]
+  sessions            Session[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Racha {
+  id                 String        @id @default(cuid())
+  name               String
+  city               String
+  venue              String
+  description        String?
+  logoUrl            String?
+  inviteCode         String        @unique
+  format             RachaFormat
+  outfieldPlayers    Int
+  goalkeepersPerTeam Int           @default(1)
+  defaultTeamCount   Int
+  members            RachaMember[]
+  positions          Position[]
+  matches            Match[]
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+}
+
+model RachaMember {
+  id                String             @id @default(cuid())
+  rachaId           String
+  userId            String
+  role              RachaRole          @default(PLAYER)
+  initialRating     Decimal?           @db.Decimal(3, 1)
+  profile           PlayerProfile?
+  matchParticipants MatchParticipant[]
+  ratingsReceived   PlayerRating[]     @relation("RatingTarget")
+  ratingsGiven      PlayerRating[]     @relation("RatingAuthor")
+  teamPlayers       TeamPlayer[]
+  goals             MatchGoal[]
+  racha             Racha              @relation(fields: [rachaId], references: [id], onDelete: Cascade)
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@unique([rachaId, userId])
+  @@unique([rachaId, id])
+  @@index([userId])
+}
+
+model PlayerProfile {
+  id                 String                    @id @default(cuid())
+  rachaId            String
+  memberId           String                    @unique
+  nickname           String?
+  photoUrl           String?
+  primaryPositionId  String?
+  member             RachaMember               @relation(fields: [rachaId, memberId], references: [rachaId, id], onDelete: Cascade)
+  primaryPosition    Position?                 @relation("PrimaryPosition", fields: [rachaId, primaryPositionId], references: [rachaId, id], onDelete: Restrict)
+  secondaryPositions PlayerSecondaryPosition[]
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+
+  @@unique([rachaId, id])
+  @@unique([rachaId, memberId])
+}
+
+model Position {
+  id                String                    @id @default(cuid())
+  rachaId           String
+  name              String
+  shortName         String
+  category          PositionCategory
+  sortOrder         Int
+  racha             Racha                     @relation(fields: [rachaId], references: [id], onDelete: Cascade)
+  primaryProfiles   PlayerProfile[]           @relation("PrimaryPosition")
+  secondaryProfiles PlayerSecondaryPosition[]
+  teamPlayers       TeamPlayer[]
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+
+  @@unique([rachaId, name])
+  @@unique([rachaId, id])
+}
+
+model PlayerSecondaryPosition {
+  rachaId    String
+  profileId  String
+  positionId String
+  profile    PlayerProfile @relation(fields: [rachaId, profileId], references: [rachaId, id], onDelete: Cascade)
+  position   Position      @relation(fields: [rachaId, positionId], references: [rachaId, id], onDelete: Cascade)
+
+  @@id([rachaId, profileId, positionId])
+}
+
+model Match {
+  id                 String             @id @default(cuid())
+  rachaId            String
+  startsAt           DateTime
+  endsAt             DateTime
+  venue              String
+  maxPlayers         Int
+  teamCount          Int
+  format             RachaFormat
+  outfieldPlayers    Int
+  goalkeepersPerTeam Int                @default(1)
+  status             MatchStatus        @default(SCHEDULED)
+  championPhotoUrl   String?
+  racha              Racha              @relation(fields: [rachaId], references: [id], onDelete: Cascade)
+  participants       MatchParticipant[]
+  teams              Team[]
+  games              MatchGame[]
+  goals              MatchGoal[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@unique([rachaId, id])
+  @@index([rachaId, startsAt])
+}
+
+model MatchParticipant {
+  id         String            @id @default(cuid())
+  rachaId    String
+  matchId    String
+  memberId   String
+  status     ParticipantStatus
+  queueOrder Int?
+  match      Match             @relation(fields: [rachaId, matchId], references: [rachaId, id], onDelete: Cascade)
+  member     RachaMember       @relation(fields: [rachaId, memberId], references: [rachaId, id], onDelete: Cascade)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  @@unique([matchId, memberId])
+  @@index([rachaId, matchId, status, queueOrder])
+}
+
+model PlayerRating {
+  id             String      @id @default(cuid())
+  rachaId        String
+  authorMemberId String
+  targetMemberId String
+  value          Decimal     @db.Decimal(3, 1)
+  author         RachaMember @relation("RatingAuthor", fields: [rachaId, authorMemberId], references: [rachaId, id], onDelete: Cascade)
+  target         RachaMember @relation("RatingTarget", fields: [rachaId, targetMemberId], references: [rachaId, id], onDelete: Cascade)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@unique([rachaId, authorMemberId, targetMemberId])
+  @@index([rachaId, targetMemberId])
+}
+
+model Team {
+  id            String       @id @default(cuid())
+  rachaId       String
+  matchId       String
+  name          String
+  color         String
+  averageRating Decimal      @db.Decimal(4, 2)
+  balanceScore  Decimal      @db.Decimal(10, 4)
+  match         Match        @relation(fields: [rachaId, matchId], references: [rachaId, id], onDelete: Cascade)
+  players       TeamPlayer[]
+  homeGames     MatchGame[]  @relation("HomeTeam")
+  awayGames     MatchGame[]  @relation("AwayTeam")
+  goals         MatchGoal[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@unique([matchId, name])
+  @@unique([rachaId, id])
+  @@unique([rachaId, matchId, id])
+}
+
+model MatchGame {
+  id         String      @id @default(cuid())
+  rachaId    String
+  matchId    String
+  homeTeamId String
+  awayTeamId String
+  sequence   Int
+  homeScore  Int         @default(0)
+  awayScore  Int         @default(0)
+  match      Match       @relation(fields: [rachaId, matchId], references: [rachaId, id], onDelete: Cascade)
+  homeTeam   Team        @relation("HomeTeam", fields: [rachaId, matchId, homeTeamId], references: [rachaId, matchId, id], onDelete: Cascade)
+  awayTeam   Team        @relation("AwayTeam", fields: [rachaId, matchId, awayTeamId], references: [rachaId, matchId, id], onDelete: Cascade)
+  goals      MatchGoal[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@unique([matchId, sequence])
+  @@unique([rachaId, matchId, id])
+  @@index([rachaId, matchId])
+}
+
+model MatchGoal {
+  id        String      @id @default(cuid())
+  rachaId   String
+  matchId   String
+  gameId    String
+  teamId    String
+  scorerId  String
+  quantity  Int         @default(1)
+  match     Match       @relation(fields: [rachaId, matchId], references: [rachaId, id], onDelete: Cascade)
+  game      MatchGame   @relation(fields: [rachaId, matchId, gameId], references: [rachaId, matchId, id], onDelete: Cascade)
+  team      Team        @relation(fields: [rachaId, matchId, teamId], references: [rachaId, matchId, id], onDelete: Cascade)
+  scorer    RachaMember @relation(fields: [rachaId, scorerId], references: [rachaId, id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@unique([gameId, scorerId])
+  @@index([rachaId, scorerId])
+}
+
+model TeamPlayer {
+  id         String      @id @default(cuid())
+  rachaId    String
+  matchId    String
+  teamId     String
+  memberId   String
+  positionId String?
+  coordX     Decimal?    @db.Decimal(5, 2)
+  coordY     Decimal?    @db.Decimal(5, 2)
+  team       Team        @relation(fields: [rachaId, matchId, teamId], references: [rachaId, matchId, id], onDelete: Cascade)
+  member     RachaMember @relation(fields: [rachaId, memberId], references: [rachaId, id], onDelete: Cascade)
+  position   Position?   @relation(fields: [rachaId, positionId], references: [rachaId, id], onDelete: Restrict)
+  createdAt  DateTime    @default(now())
+
+  @@unique([matchId, memberId])
+  @@index([rachaId, memberId])
+}
