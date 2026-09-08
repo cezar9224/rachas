@@ -204,3 +204,46 @@ npm run build
 ```
 
 Resultado da validação final: 35 testes automatizados aprovados, sem erros de TypeScript ou lint, e build de produção concluído com sucesso.
+
+## Deploy gratuito
+
+A configuração recomendada para a primeira publicação é:
+
+- Vercel para executar a aplicação Next.js.
+- Neon para hospedar o PostgreSQL.
+- Cloudinary para armazenar as fotos fora do banco de dados.
+
+### 1. Criar o banco de produção
+
+Crie um projeto no Neon e copie a connection string com pool de conexões habilitado. Ela deve possuir `sslmode=require` e será usada como `DATABASE_URL`.
+
+Antes do primeiro deploy, aplique as migrations no banco remoto a partir de um terminal local:
+
+```powershell
+$env:DATABASE_URL="postgresql://USUARIO:SENHA@HOST-pooler.neon.tech/BANCO?sslmode=require"
+npm.cmd run db:deploy
+Remove-Item Env:DATABASE_URL
+```
+
+Não execute `db:seed` no banco de produção, pois esse comando cria dados de demonstração.
+
+### 2. Configurar a Vercel
+
+Importe o repositório GitHub na Vercel e cadastre estas variáveis nos ambientes `Production`, `Preview` e `Development` quando aplicável:
+
+```text
+DATABASE_URL=connection string do Neon
+SESSION_COOKIE_NAME=rachas_session
+SESSION_TTL_DAYS=30
+CLOUDINARY_CLOUD_NAME=cloud name
+CLOUDINARY_API_KEY=api key
+CLOUDINARY_API_SECRET=api secret
+```
+
+O script `postinstall` gera o Prisma Client durante a instalação na Vercel. O build permanece como `npm run build`.
+
+### 3. Publicar e validar
+
+Depois do deploy, valide cadastro, login, criação de racha, presença, sorteio, envio de foto e registro de resultados. A recuperação de senha ainda não envia e-mail em produção e deve receber um provedor de e-mail antes de ser considerada completa.
+
+Nunca cadastre segredos diretamente no GitHub ou no README. Use o painel de variáveis de ambiente da Vercel e mantenha o arquivo `.env` somente na máquina local.
